@@ -51,11 +51,11 @@ jobs:
             echo "Changed files: ${{ env.CHANGED_FILES }}"
             if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
               echo "Deploying MC.apk..."
-              ls -l MC/  # List MC directory contents for debugging
+              ls -l MC  # List MC directory contents for debugging
               scp MC/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
             fi
 
             if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
               echo "Deploying SIL.apk..."
-              ls -l SIL/  # List SIL directory contents for debugging
+              ls -l SIL  # List SIL directory contents for debugging
               scp SIL/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
