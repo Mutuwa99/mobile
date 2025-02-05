@@ -55,8 +55,7 @@ jobs:
               echo "Deploying MC.apk..."
               # Change to the MC directory before listing and deploying files
               cd $GITHUB_WORKSPACE/MC
-
-              pwd $GITHUB_WORKSPACE
+              echo "Current working directory (MC): $(pwd)"
               ls -l  # List MC directory contents for debugging
               # Deploy all APK files in the MC folder
               scp *.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
@@ -67,8 +66,8 @@ jobs:
               echo "Deploying SIL.apk..."
               # Change to the SIL directory before listing and deploying files
               cd $GITHUB_WORKSPACE/SIL
+              echo "Current working directory (SIL): $(pwd)"
               ls -l  # List SIL directory contents for debugging
               # Deploy all APK files in the SIL folder
               scp *.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
             fi
-
