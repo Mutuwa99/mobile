@@ -72,6 +72,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "Changed files: ${{ env.CHANGED_FILES }}"
+            ls -R /home/runner/work/mobile/mobile
 
             # Deploy files from MC directory if there are changes
             if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
