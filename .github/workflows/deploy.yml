@@ -18,6 +18,13 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      - name: Show changed files and folders
+        run: |
+          echo "Checking for changed files and directories..."
+          git diff --name-status ${{ github.event.before }} ${{ github.sha }} | while read status file; do
+            echo "File: $file, Status: $status"
+          done
+
       - name: Check and deploy MC directory if changed
         id: check_mc
         run: |
