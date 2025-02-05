@@ -25,6 +25,14 @@ jobs:
           echo "Changed files: $CHANGED"
           echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
 
+      - name: Debug - List directories
+        run: |
+          echo "Current working directory: $(pwd)"
+          echo "Contents of MC/ directory:"
+          ls -l MC/
+          echo "Contents of SIL/ directory:"
+          ls -l SIL/
+
       - name: Deploy to Server
         uses: appleboy/ssh-action@v0.1.7
         with:
@@ -32,12 +40,15 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            echo "Changed files: ${{ env.CHANGED_FILES }}"
             if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
               echo "Deploying MC.apk..."
+              ls -l MC/  # List MC directory contents for debugging
               scp MC/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
             fi
 
             if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
               echo "Deploying SIL.apk..."
+              ls -l SIL/  # List SIL directory contents for debugging
               scp SIL/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
             fi
