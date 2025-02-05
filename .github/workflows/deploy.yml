@@ -53,15 +53,20 @@ jobs:
             # Deploy MC APK if there are any changes in the MC folder
             if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
               echo "Deploying MC.apk..."
-              ls -l MC/  # List MC directory contents for debugging
+              # Change to the MC directory before listing and deploying files
+              cd $GITHUB_WORKSPACE/MC
+              ls -l  # List MC directory contents for debugging
               # Deploy all APK files in the MC folder
-              scp MC/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
+              scp *.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
             fi
 
             # Deploy SIL APK if there are any changes in the SIL folder
             if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
               echo "Deploying SIL.apk..."
-              ls -l SIL/  # List SIL directory contents for debugging
+              # Change to the SIL directory before listing and deploying files
+              cd $GITHUB_WORKSPACE/SIL
+              ls -l  # List SIL directory contents for debugging
               # Deploy all APK files in the SIL folder
-              scp SIL/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
+              scp *.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
             fi
+
