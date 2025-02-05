@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: macos-latest  # Use macOS runner for local debugging
+    runs-on: ubuntu-latest  # Use macOS runner for local debugging
 
     steps:
       - name: Checkout repository
