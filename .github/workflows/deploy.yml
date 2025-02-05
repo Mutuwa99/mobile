@@ -49,7 +49,7 @@ jobs:
               fi
             done
           "
-          echo "Deploying new MC directory to EC2..."
+          echo "Deploying new MC APK to the server..."
           scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/MC"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/MC/
 
       - name: Check and deploy SIL directory if changed
@@ -74,5 +74,10 @@ jobs:
               fi
             done
           "
-          echo "Deploying new SIL directory to EC2..."
+          echo "Deploying new SIL APK to the server..."
           scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/SIL"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/SIL/
+
+      - name: Restart Nginx on the server
+        run: |
+          echo "Restarting Nginx..."
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "sudo systemctl restart nginx"
