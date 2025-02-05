@@ -39,5 +39,5 @@ jobs:
 
             if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
               echo "Deploying SIL.apk..."
-              scp SIL/*.apk ${{ secrets.USERNAMEß }}@${{ secrets.IP }}:/var/www/html/SIL/
+              scp SIL/*.apk ${{ secrets.USERNAME }}@${{ secrets.IP }}:/var/www/html/SIL/
             fi
