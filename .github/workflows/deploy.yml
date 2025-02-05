@@ -36,12 +36,12 @@ jobs:
       - name: Debug - List MC directory
         run: |
           echo "Contents of MC/ directory:"
-          ls -l MC/
+          ls -l $GITHUB_WORKSPACE/MC/  # Fix path reference
 
       - name: Debug - List SIL directory
         run: |
           echo "Contents of SIL/ directory:"
-          ls -l SIL/
+          ls -l $GITHUB_WORKSPACE/SIL/  # Fix path reference
 
       - name: Deploy to Server
         uses: appleboy/ssh-action@v0.1.7
@@ -55,21 +55,29 @@ jobs:
             # Check if there are changes in the MC directory
             if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
               echo "Deploying files in MC directory..."
-              # Change to the MC directory inside the GitHub workspace
+              # Ensure we're in the right directory inside the GitHub workspace
               cd $GITHUB_WORKSPACE/MC
               echo "Current working directory (MC): $(pwd)"
               ls -l  # List MC directory contents for debugging
               # Deploy all changed files in the MC folder (any file, not just .apk)
-              scp * ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
+              for file in *; do
+                if [[ -f "$file" ]]; then
+                  scp "$file" ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
+                fi
+              done
             fi
 
             # Check if there are changes in the SIL directory
             if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
               echo "Deploying files in SIL directory..."
-              # Change to the SIL directory inside the GitHub workspace
+              # Ensure we're in the right directory inside the GitHub workspace
               cd $GITHUB_WORKSPACE/SIL
               echo "Current working directory (SIL): $(pwd)"
               ls -l  # List SIL directory contents for debugging
               # Deploy all changed files in the SIL folder (any file, not just .apk)
-              scp * ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
+              for file in *; do
+                if [[ -f "$file" ]]; then
+                  scp "$file" ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
+                fi
+              done
             fi
