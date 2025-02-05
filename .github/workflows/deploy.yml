@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # Use macOS runner for local debugging
+    runs-on: ubuntu-latest  # or macos-latest for local debugging
 
     steps:
       - name: Checkout repository
@@ -31,12 +31,15 @@ jobs:
           echo "Listing directory structure:"
           ls -R  # List the entire repository structure for debugging
 
-      - name: Debug - List directories
+      - name: Debug - List MC directory
         run: |
           echo "Contents of MC/ directory:"
-          ls -l MC/
+          ls -l MC/  # List MC directory contents for debugging
+
+      - name: Debug - List SIL directory
+        run: |
           echo "Contents of SIL/ directory:"
-          ls -l SIL/
+          ls -l SIL/  # List SIL directory contents for debugging
 
       - name: Deploy to Server
         uses: appleboy/ssh-action@v0.1.7
