@@ -25,17 +25,19 @@ jobs:
           echo "Changed files: $CHANGED"
           echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
 
+      - name: Setup SSH Key
+        run: |
+          echo "${{ secrets.KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
       - name: Deploy MC APK if changed
         if: contains(env.CHANGED_FILES, 'MC/')
         run: |
           echo "Deploying MC.apk..."
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no MC/*.apk user@your-server:/server/path/MC/
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no MC/*.apk ${{ secrets.USERNAME }}@${{ secrets.IP }}:/var/www/html/MC/
 
       - name: Deploy SIL APK if changed
         if: contains(env.CHANGED_FILES, 'SIL/')
         run: |
           echo "Deploying SIL.apk..."
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no SIL/*.apk user@your-server:/server/path/SIL/
-
-    env:
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no SIL/*.apk ${{ secrets.USERNAME }}@${{ secrets.IP }}:/var/www/html/SIL/
