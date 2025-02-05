@@ -7,7 +7,6 @@ on:
       - production
 
 jobs:
-
   deploy:
     runs-on: ubuntu-latest
     steps:
@@ -19,22 +18,28 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Check MC directory and deploy
+      - name: Get changes for MC directory
+        id: check_mc
         run: |
-          if [ -d "$GITHUB_WORKSPACE/MC" ]; then
-            echo "Deploying MC directory..."
-            scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/MC"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/MC/
-          else
-            echo "MC directory not found, skipping deployment..."
-          fi
-
-      - name: Check SIL directory and deploy
+          # Check if there are any changes in the MC directory
+          echo "Checking for changes in the MC directory..."
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep "^MC/" || echo "No changes in MC directory"
+        
+      - name: Deploy MC directory if changed
+        if: steps.check_mc.outputs.result != 'No changes in MC directory'
         run: |
-          if [ -d "$GITHUB_WORKSPACE/SIL" ]; then
-            echo "Deploying SIL directory..."
-            scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/SIL"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/SIL/
-          else
-            echo "SIL directory not found, skipping deployment..."
-          fi
+          echo "Deploying MC directory..."
+          scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/MC"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/MC/
 
+      - name: Get changes for SIL directory
+        id: check_sil
+        run: |
+          # Check if there are any changes in the SIL directory
+          echo "Checking for changes in the SIL directory..."
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep "^SIL/" || echo "No changes in SIL directory"
 
+      - name: Deploy SIL directory if changed
+        if: steps.check_sil.outputs.result != 'No changes in SIL directory'
+        run: |
+          echo "Deploying SIL directory..."
+          scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/SIL"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/SIL/
