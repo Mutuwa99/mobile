@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 2  # Fetch at least the last two commits
+          fetch-depth: 0  # Fetch the entire history to ensure all files are checked out
 
       - name: Identify changed APKs
         id: changed_files
@@ -25,9 +25,14 @@ jobs:
           echo "Changed files: $CHANGED"
           echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
 
-      - name: Debug - List directories
+      - name: Debug - List repository structure
         run: |
           echo "Current working directory: $(pwd)"
+          echo "Listing directory structure:"
+          ls -R  # List the entire repository structure for debugging
+
+      - name: Debug - List directories
+        run: |
           echo "Contents of MC/ directory:"
           ls -l MC/
           echo "Contents of SIL/ directory:"
