@@ -23,19 +23,21 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22  # or use your port if different
           script: |
+
+            
             # Debugging: Print working directories
             echo "GitHub Workspace: $GITHUB_WORKSPACE"
             echo "Remote path for MC: /server/path/MC/"
             echo "Remote path for SIL: /server/path/SIL/"
 
             # Check if the local MC directory exists
-            if [ ! -d "$GITHUB_WORKSPACE/MC" ]; then
+            if [ ! -d "$GITHUB_WORKSPACE/mobile/MC" ]; then
               echo "Error: MC directory does not exist in local workspace"
               exit 1
             fi
 
             # Check if the local SIL directory exists
-            if [ ! -d "$GITHUB_WORKSPACE/SIL" ]; then
+            if [ ! -d "$GITHUB_WORKSPACE/mobile/sil" ]; then
               echo "Error: SIL directory does not exist in local workspace"
               exit 1
             fi
@@ -48,7 +50,7 @@ jobs:
 
             # Deploy MC files to the remote server
             echo "Deploying files from MC directory..."
-            for file in $GITHUB_WORKSPACE/MC/*; do
+            for file in $GITHUB_WORKSPACE/mobile/mobileMC/*; do
               if [ -f "$file" ]; then
                 echo "Deploying $file to server..."
                 scp "$file" ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
