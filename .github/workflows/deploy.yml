@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # Use macOS runner for local debugging
+    runs-on: ubuntu-latest  # Use ubuntu runner
 
     steps:
       - name: Checkout repository
@@ -21,7 +21,7 @@ jobs:
       - name: Identify changed APKs
         id: changed_files
         run: |
-          CHANGED=$(git diff --name-only HEAD^ HEAD -- '*.apk' || true)
+          CHANGED=$(git diff --name-only HEAD^ HEAD -- 'MC/*.apk' 'SIL/*.apk' || true)
           echo "Changed files: $CHANGED"
           echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
 
@@ -50,26 +50,18 @@ jobs:
           script: |
             echo "Changed files: ${{ env.CHANGED_FILES }}"
 
-            # Deploy MC APK if there are any changes
+            # Deploy MC APK if there are any changes in the MC folder
             if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
               echo "Deploying MC.apk..."
               ls -l MC/  # List MC directory contents for debugging
-              # Check if the file exists before attempting to copy it
-              if [[ -f MC/l.apk ]]; then
-                scp MC/l.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
-              else
-                echo "No APK files found in MC/"
-              fi
+              # Deploy all APK files in the MC folder
+              scp MC/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
             fi
 
-            # Deploy SIL APK if there are any changes
+            # Deploy SIL APK if there are any changes in the SIL folder
             if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
               echo "Deploying SIL.apk..."
               ls -l SIL/  # List SIL directory contents for debugging
-              # Check if the file exists before attempting to copy it
-              if [[ -f SIL/p.apk ]]; then
-                scp SIL/p.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
-              else
-                echo "No APK files found in SIL/"
-              fi
+              # Deploy all APK files in the SIL folder
+              scp SIL/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
             fi
