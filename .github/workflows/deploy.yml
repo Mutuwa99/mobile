@@ -25,7 +25,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Debugging: Check commit hashes
+      - name: Debugging Check commit hashes
         run: |
           echo "Before commit: ${{ github.event.before }}"
           echo "Current commit: ${{ github.sha }}"
