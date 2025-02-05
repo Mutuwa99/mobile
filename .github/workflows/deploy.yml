@@ -10,13 +10,13 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest  # Use macOS runner for local debugging
 
     steps:
-      - name: Checkout repository with full history
+      - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 2  # Fetch at least the last two commits
+          fetch-depth: 0  # Fetch the entire history to ensure all files are checked out
 
       - name: Identify changed APKs
         id: changed_files
@@ -25,19 +25,34 @@ jobs:
           echo "Changed files: $CHANGED"
           echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
 
-      - name: Setup SSH Key
+      - name: Debug - List repository structure
         run: |
-          echo "${{ secrets.KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          echo "Current working directory: $(pwd)"
+          echo "Listing directory structure:"
+          ls -R  # List the entire repository structure for debugging
 
-      - name: Deploy MC APK if changed
-        if: contains(env.CHANGED_FILES, 'MC/')
+      - name: Debug - List directories
         run: |
-          echo "Deploying MC.apk..."
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no MC/*.apk ${{ secrets.USERNAME }}@${{ secrets.IP }}:/var/www/html/MC/
+          echo "Contents of MC/ directory:"
+          ls -l MC/
+          echo "Contents of SIL/ directory:"
+          ls -l SIL/
 
-      - name: Deploy SIL APK if changed
-        if: contains(env.CHANGED_FILES, 'SIL/')
-        run: |
-          echo "Deploying SIL.apk..."
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no SIL/*.apk ${{ secrets.USERNAME }}@${{ secrets.IP }}:/var/www/html/SIL/
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "Changed files: ${{ env.CHANGED_FILES }}"
+            if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
+              echo "Deploying MC.apk..."
+              ls -l MC/  # List MC directory contents for debugging
+              scp MC/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
+            fi
+
+            if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
+              echo "Deploying SIL.apk..."
+              ls -l SIL/  # List SIL directory contents for debugging
+              scp SIL/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
