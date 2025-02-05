@@ -1,9 +1,9 @@
-name: Deploy Client APKs
+name: Deploy APKs
 
 on:
   push:
     branches:
-      - main  # Run when changes are pushed to main
+      - main  # Run only when pushing to the main branch
     paths:
       - 'MC/*.apk'
       - 'SIL/*.apk'
@@ -13,28 +13,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repository with full history
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # Fetch at least the last two commits
 
       - name: Identify changed APKs
         id: changed_files
         run: |
-          CHANGED=$(git diff --name-only HEAD^ HEAD | grep '.apk' || true)
+          CHANGED=$(git diff --name-only HEAD^ HEAD -- '*.apk' || true)
           echo "Changed files: $CHANGED"
           echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
 
       - name: Deploy MC APK if changed
         if: contains(env.CHANGED_FILES, 'MC/')
         run: |
-          echo "Deploying MC APK..."
-          scp -i ${{ secrets.SSH_KEY }} MC/*.apk user@your-server:/server/path/MC/
+          echo "Deploying MC.apk..."
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no MC/*.apk user@your-server:/server/path/MC/
 
       - name: Deploy SIL APK if changed
         if: contains(env.CHANGED_FILES, 'SIL/')
         run: |
-          echo "Deploying SIL APK..."
-          scp -i ${{ secrets.SSH_KEY }} SIL/*.apk user@your-server:/server/path/SIL/
+          echo "Deploying SIL.apk..."
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no SIL/*.apk user@your-server:/server/path/SIL/
 
-        env:
-          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
