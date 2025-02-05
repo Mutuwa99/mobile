@@ -41,7 +41,7 @@ jobs:
           echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
 
       # Step 5: Debugging: Print working directories and check existence
-      - name: Debugging: Print working directories
+      - name: Debugging Print working directories
         run: |
           echo "GitHub Workspace: /home/runner/work/mobile/mobile"
           echo "MC directory: /home/runner/work/mobile/mobile/MC"
