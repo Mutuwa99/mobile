@@ -25,19 +25,19 @@ jobs:
           echo "Changed files: $CHANGED"
           echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
 
-      - name: Deploy to server
+      - name: Deploy to Server
         uses: appleboy/ssh-action@v0.1.7
         with:
-          host: ${{ secrets.IP }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
               echo "Deploying MC.apk..."
-              scp MC/*.apk ${{ secrets.USERNAME }}@${{ secrets.IP }}://path/MC/
+              scp MC/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
             fi
 
             if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
               echo "Deploying SIL.apk..."
-              scp SIL/*.apk ${{ secrets.USERNAME }}@${{ secrets.IP }}:/var/www/html/SIL/
+              scp SIL/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
             fi
