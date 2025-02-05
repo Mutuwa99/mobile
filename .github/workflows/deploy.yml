@@ -77,7 +77,7 @@ jobs:
           echo "Deploying new SIL APK to the server..."
           scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/SIL"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/SIL/
 
-      - name: Restart Nginx on the server
+      - name: Restart Nginx
         run: |
           echo "Restarting Nginx..."
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "sudo systemctl restart nginx"
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S systemctl restart nginx"
