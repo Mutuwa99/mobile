@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository with full history
+      - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 2  # Fetch at least the last two commits
@@ -25,19 +25,19 @@ jobs:
           echo "Changed files: $CHANGED"
           echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
 
-      - name: Setup SSH Key
-        run: |
-          echo "${{ secrets.KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.IP }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
+              echo "Deploying MC.apk..."
+              scp MC/*.apk ${{ secrets.USERNAME }}@${{ secrets.IP }}://path/MC/
+            fi
 
-      - name: Deploy MC APK if changed
-        if: contains(env.CHANGED_FILES, 'MC/')
-        run: |
-          echo "Deploying MC.apk..."
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no MC/*.apk ${{ secrets.USERNAME }}@${{ secrets.IP }}:/var/www/html/MC/
-
-      - name: Deploy SIL APK if changed
-        if: contains(env.CHANGED_FILES, 'SIL/')
-        run: |
-          echo "Deploying SIL.apk..."
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no SIL/*.apk ${{ secrets.USERNAME }}@${{ secrets.IP }}:/var/www/html/SIL/
+            if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
+              echo "Deploying SIL.apk..."
+              scp SIL/*.apk ${{ secrets.USERNAMEß }}@${{ secrets.IP }}:/var/www/html/SIL/
+            fi
