@@ -14,13 +14,6 @@ jobs:
         uses: actions/checkout@v2
 
   deploy_to_qa:
-    # needs: checkout_mycode
-    # if: github.ref == 'refs/heads/master'
-    # runs-on: ubuntu-latest
-    # environment: 
-    #   name: QA-mywebsite
-    #   url: http://noble-mutuwa.com/
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -48,18 +41,6 @@ jobs:
             echo "SIL directory not found, skipping deployment..."
           fi
 
-  qa_send_notification:
-    needs: deploy_to_qa
-    if: needs.deploy_to_qa.result == 'success'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send notification to repository owner
-        run: |
-          REPO_OWNER=$(jq --raw-output .repository.owner.login "${GITHUB_EVENT_PATH}")
-          NOTIFICATION="Deployment to QA completed."
-          API_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/notifications"
-          RESPONSE=$(curl -sSL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/json" -X POST -d "{\"subject\":\"$NOTIFICATION\",\"repository\":\"$REPO_OWNER/$GITHUB_REPOSITORY\"}" "$API_URL")
-          echo "Notification sent to repository owner: $REPO_OWNER"
 
   deploy_to_prod:
     if: github.ref == 'refs/heads/production'
@@ -70,15 +51,3 @@ jobs:
           echo "Production deployment started..."
           # Add commands for production deployment if needed
 
-  production_send_notification:
-    needs: deploy_to_prod
-    if: needs.deploy_to_prod.result == 'success'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send production deployment notification
-        run: |
-          REPO_OWNER=$(jq --raw-output .repository.owner.login "${GITHUB_EVENT_PATH}")
-          NOTIFICATION="Deployment to production completed."
-          API_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/notifications"
-          RESPONSE=$(curl -sSL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/json" -X POST -d "{\"subject\":\"$NOTIFICATION\",\"repository\":\"$REPO_OWNER/$GITHUB_REPOSITORY\"}" "$API_URL")
-          echo "Notification sent to repository owner: $REPO_OWNER"
