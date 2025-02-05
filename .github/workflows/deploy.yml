@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # or macos-latest for local debugging
+    runs-on: ubuntu-latest  # Use macOS runner for local debugging
 
     steps:
       - name: Checkout repository
@@ -34,12 +34,12 @@ jobs:
       - name: Debug - List MC directory
         run: |
           echo "Contents of MC/ directory:"
-          ls -l MC/  # List MC directory contents for debugging
+          ls -l MC/
 
       - name: Debug - List SIL directory
         run: |
           echo "Contents of SIL/ directory:"
-          ls -l SIL/  # List SIL directory contents for debugging
+          ls -l SIL/
 
       - name: Deploy to Server
         uses: appleboy/ssh-action@v0.1.7
@@ -49,13 +49,27 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "Changed files: ${{ env.CHANGED_FILES }}"
+
+            # Deploy MC APK if there are any changes
             if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
               echo "Deploying MC.apk..."
-              ls -l MC  # List MC directory contents for debugging
-              scp MC/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
+              ls -l MC/  # List MC directory contents for debugging
+              # Check if the file exists before attempting to copy it
+              if [[ -f MC/l.apk ]]; then
+                scp MC/l.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
+              else
+                echo "No APK files found in MC/"
+              fi
             fi
 
+            # Deploy SIL APK if there are any changes
             if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
               echo "Deploying SIL.apk..."
-              ls -l SIL  # List SIL directory contents for debugging
-              scp SIL/*.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
+              ls -l SIL/  # List SIL directory contents for debugging
+              # Check if the file exists before attempting to copy it
+              if [[ -f SIL/p.apk ]]; then
+                scp SIL/p.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
+              else
+                echo "No APK files found in SIL/"
+              fi
+            fi
