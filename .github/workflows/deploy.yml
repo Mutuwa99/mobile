@@ -1,12 +1,12 @@
-name: Deploy Files
+name: Deploy APKs
 
 on:
   push:
     branches:
       - main  # Run only when pushing to the main branch
     paths:
-      - 'MC/**'   # Watch for any file changes in the MC folder
-      - 'SIL/**'  # Watch for any file changes in the SIL folder
+      - 'MC/**'
+      - 'SIL/**'
 
 jobs:
   deploy:
@@ -23,6 +23,7 @@ jobs:
         run: |
           CHANGED=$(git diff --name-only HEAD^ HEAD -- 'MC/**' 'SIL/**' || true)
           echo "Changed files: $CHANGED"
+          # Ensure that CHANGED_FILES environment variable is set correctly
           echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
 
       - name: Debug - List repository structure
@@ -50,24 +51,24 @@ jobs:
           script: |
             echo "Changed files: ${{ env.CHANGED_FILES }}"
 
-            # Deploy MC files if there are any changes in the MC folder
+            # Deploy MC APK if there are any changes in the MC folder
             if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
-              echo "Deploying files from MC folder..."
-              # Change to the MC directory before listing and deploying files
+              echo "Deploying MC.apk..."
+              # Change to the correct directory inside the GitHub workspace
               cd $GITHUB_WORKSPACE/MC
               echo "Current working directory (MC): $(pwd)"
               ls -l  # List MC directory contents for debugging
-              # Deploy all changed files in the MC folder
+              # Deploy all APK files in the MC folder
               scp * ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
             fi
 
-            # Deploy SIL files if there are any changes in the SIL folder
+            # Deploy SIL APK if there are any changes in the SIL folder
             if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
-              echo "Deploying files from SIL folder..."
+              echo "Deploying SIL.apk..."
               # Change to the SIL directory before listing and deploying files
               cd $GITHUB_WORKSPACE/SIL
               echo "Current working directory (SIL): $(pwd)"
               ls -l  # List SIL directory contents for debugging
-              # Deploy all changed files in the SIL folder
+              # Deploy all files in the SIL folder
               scp * ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
             fi
