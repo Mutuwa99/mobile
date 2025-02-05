@@ -1,7 +1,9 @@
-name: Deploy Changes to Server
+name: Deploy APKs
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'MC/**'
       - 'SIL/**'
@@ -9,31 +11,86 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       # Step 1: Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v2
-
-      # Step 2: Set up SSH to connect to your server
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.5.3
+        uses: actions/checkout@v3
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          fetch-depth: 0  # Ensure all file history is available
 
-      # Step 3: Install rsync (needed for file transfer)
-      - name: Install rsync
-        run: sudo apt-get install -y rsync
-
-      # Step 4: Check for changes in MC and copy files over
-      - name: Copy MC files
-        if: ${{ github.event.head_commit.modified == 'MC' }}
+      # Step 2: Print directory structure at the root level
+      - name: Print root directory structure
         run: |
-          echo "Copying MC files to the server..."
-          rsync -avz --exclude '.git' ./MC/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/path/to/your/app/MC/
+          echo "Root directory structure of the GitHub workspace:"
+          tree $GITHUB_WORKSPACE -L 2  # Adjust the depth level to show two levels
 
-      # Step 5: Check for changes in SIL and copy files over
-      - name: Copy SIL files
-        if: ${{ github.event.head_commit.modified == 'SIL' }}
+      # Step 3: Print the first few files at the root of the repository
+      - name: Print first few files
         run: |
-          echo "Copying SIL files to the server..."
-          rsync -avz --exclude '.git' ./SIL/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/path/to/your/app/SIL/
+          echo "First few files in the repository (root level):"
+          ls -lh $GITHUB_WORKSPACE | head -n 10  # List the first 10 files in the root directory
+
+      # Step 4: Identify changed files
+      - name: Identify changed files
+        id: changed_files
+        run: |
+          # Get the list of changed files from the previous commit to the current one
+          CHANGED=$(git diff --name-only HEAD^ HEAD -- 'MC/**' 'SIL/**' || true)
+          echo "Changed files: $CHANGED"
+          echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
+
+      # Step 5: Debugging: Print working directories and check existence
+      - name: Debugging: Print working directories
+        run: |
+          echo "GitHub Workspace: $GITHUB_WORKSPACE"
+          echo "MC directory: $GITHUB_WORKSPACE/MC"
+          echo "SIL directory: $GITHUB_WORKSPACE/SIL"
+
+          # Check if the MC directory exists
+          if [ -d "$GITHUB_WORKSPACE/MC" ]; then
+            echo "MC directory exists."
+          else
+            echo "Error: MC directory does not exist."
+            exit 1
+          fi
+
+          # Check if the SIL directory exists
+          if [ -d "$GITHUB_WORKSPACE/SIL" ]; then
+            echo "SIL directory exists."
+          else
+            echo "Error: SIL directory does not exist."
+            exit 1
+          fi
+
+      # Step 6: Deploy to Server using SSH
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "Changed files: ${{ env.CHANGED_FILES }}"
+
+            # Deploy files from MC directory if there are changes
+            if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
+              echo "Deploying files in MC directory..."
+              cd $GITHUB_WORKSPACE/MC
+              echo "Current working directory (MC): $(pwd)"
+              ls -l  # List MC directory contents for debugging
+
+              # Deploy all changed files in the MC folder
+              for file in *; do
+                if [[ -f "$file" ]]; then
+                  echo "Deploying $file to /server/path/MC/"
+                  scp "$file" ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
+                fi
+              done
+            fi
+
+            # Deploy files from SIL directory if there are changes
+            if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
+              echo "Deploying files in SIL directory..."
+              cd $GITHUB_WORKSPACE/SIL
+     
