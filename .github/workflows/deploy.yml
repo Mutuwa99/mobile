@@ -28,7 +28,7 @@ jobs:
         run: |
           if [ -d "$GITHUB_WORKSPACE/MC" ]; then
             echo "Deploying MC directory..."
-            scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/MC"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/SIL/
+            scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/MC"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/SIL/
           else
             echo "MC directory not found, skipping deployment..."
           fi
@@ -37,7 +37,7 @@ jobs:
         run: |
           if [ -d "$GITHUB_WORKSPACE/SIL" ]; then
             echo "Deploying SIL directory..."
-            scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/SIL"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/SIL/
+            scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/SIL"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/SIL/
           else
             echo "SIL directory not found, skipping deployment..."
           fi
