@@ -38,10 +38,18 @@ jobs:
             echo "No changes in MC directory."
           fi
 
-      - name: Deploy MC directory to EC2
+      - name: Backup and deploy MC directory to EC2
         if: env.deploy_mc == 'true'
         run: |
-          echo "Deploying MC directory to EC2..."
+          echo "Renaming existing files in the MC directory on EC2..."
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "
+            for file in /var/www/html/Mobile/MC/*; do
+              if [[ -f \$file ]]; then
+                mv \$file \${file}.4-sure.bak.\$(date +'%Y%m%d%H%M%S')
+              fi
+            done
+          "
+          echo "Deploying new MC directory to EC2..."
           scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/MC"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/MC/
 
       - name: Check and deploy SIL directory if changed
@@ -55,8 +63,16 @@ jobs:
             echo "No changes in SIL directory."
           fi
 
-      - name: Deploy SIL directory to EC2
+      - name: Backup and deploy SIL directory to EC2
         if: env.deploy_sil == 'true'
         run: |
-          echo "Deploying SIL directory to EC2..."
+          echo "Renaming existing files in the SIL directory on EC2..."
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "
+            for file in /var/www/html/Mobile/SIL/*; do
+              if [[ -f \$file ]]; then
+                mv \$file \${file}.4-sure.bak.\$(date +'%Y%m%d%H%M%S')
+              fi
+            done
+          "
+          echo "Deploying new SIL directory to EC2..."
           scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/SIL"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/SIL/
