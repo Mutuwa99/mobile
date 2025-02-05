@@ -18,28 +18,54 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Get changes for MC directory
+      - name: Check and deploy MC directory if changed
         id: check_mc
         run: |
-          # Check if there are any changes in the MC directory
           echo "Checking for changes in the MC directory..."
-          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep "^MC/" || echo "No changes in MC directory"
-        
-      - name: Deploy MC directory if changed
-        if: steps.check_mc.outputs.result != 'No changes in MC directory'
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep "^MC/"; then
+            echo "MC directory has changed."
+            echo "deploy_mc=true" >> $GITHUB_ENV
+          else
+            echo "No changes in MC directory."
+          fi
+
+      - name: Deploy MC directory to EC2
+        if: env.deploy_mc == 'true'
         run: |
-          echo "Deploying MC directory..."
+          echo "Deploying MC directory to EC2..."
           scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/MC"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/MC/
 
-      - name: Get changes for SIL directory
+      - name: Check and deploy SIL directory if changed
         id: check_sil
         run: |
-          # Check if there are any changes in the SIL directory
           echo "Checking for changes in the SIL directory..."
-          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep "^SIL/" || echo "No changes in SIL directory"
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep "^SIL/"; then
+            echo "SIL directory has changed."
+            echo "deploy_sil=true" >> $GITHUB_ENV
+          else
+            echo "No changes in SIL directory."
+          fi
 
-      - name: Deploy SIL directory if changed
-        if: steps.check_sil.outputs.result != 'No changes in SIL directory'
+      - name: Deploy SIL directory to EC2
+        if: env.deploy_sil == 'true'
         run: |
-          echo "Deploying SIL directory..."
+          echo "Deploying SIL directory to EC2..."
           scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/SIL"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/SIL/
+
+      - name: Check and deploy another client directory if changed
+        id: check_another_client
+        run: |
+          CLIENT_DIR="ClientXYZ"  # Change this to your actual client folder
+          echo "Checking for changes in the $CLIENT_DIR directory..."
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep "^$CLIENT_DIR/"; then
+            echo "$CLIENT_DIR directory has changed."
+            echo "deploy_$CLIENT_DIR=true" >> $GITHUB_ENV
+          else
+            echo "No changes in $CLIENT_DIR directory."
+          fi
+
+      - name: Deploy client directory to EC2
+        if: env.deploy_ClientXYZ == 'true'  # Replace with your client folder variable
+        run: |
+          echo "Deploying ClientXYZ directory to EC2..."
+          scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/ClientXYZ"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/ClientXYZ/
