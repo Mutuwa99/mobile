@@ -1,69 +1,97 @@
-name: Deploy Files to Server
+name: Deploy APKs
 
 on:
   push:
     branches:
-      - main  # Trigger this on push to the main branch (or use whichever branch you prefer)
+      - main
     paths:
-      - 'MC/*'    # Triggers if any files in MC directory are modified
-      - 'SIL/*'   # Triggers if any files in SIL directory are modified
+      - 'MC/**'
+      - 'SIL/**'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
 
-      - name: Set up SSH
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch the entire history to ensure all files are checked out
+
+      - name: Identify changed files
+        id: changed_files
+        run: |
+          CHANGED=$(git diff --name-only HEAD^ HEAD -- 'MC/**' 'SIL/**' || true)
+          echo "Changed files: $CHANGED"
+          echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
+
+      - name: Print directory structure of GitHub workspace
+        run: |
+          echo "Printing directory structure of GitHub workspace:"
+          # Print full directory structure of the workspace
+          tree $GITHUB_WORKSPACE
+
+      - name: Debugging: Print working directories
+        run: |
+          echo "GitHub Workspace: $GITHUB_WORKSPACE"
+          echo "Remote path for MC: /server/path/MC/"
+          echo "Remote path for SIL: /server/path/SIL/"
+
+          # Print the contents of MC directory if it exists
+          if [ -d "$GITHUB_WORKSPACE/MC" ]; then
+            echo "Contents of MC directory: $(ls -l $GITHUB_WORKSPACE/MC)"
+          else
+            echo "MC directory does not exist."
+          fi
+
+          # Print the contents of SIL directory if it exists
+          if [ -d "$GITHUB_WORKSPACE/SIL" ]; then
+            echo "Contents of SIL directory: $(ls -l $GITHUB_WORKSPACE/SIL)"
+          else
+            echo "SIL directory does not exist."
+          fi
+
+      - name: Deploy to Server
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22  # or use your port if different
           script: |
+            echo "Changed files: ${{ env.CHANGED_FILES }}"
 
-            
-            # Debugging: Print working directories
-            echo "GitHub Workspace: $GITHUB_WORKSPACE"
-            echo "Remote path for MC: /server/path/MC/"
-            echo "Remote path for SIL: /server/path/SIL/"
-
-            # Check if the local MC directory exists
-            if [ ! -d "$GITHUB_WORKSPACE/mobile/MC" ]; then
-              echo "Error: MC directory does not exist in local workspace"
-              exit 1
+            # Check if there are changes in the MC directory
+            if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
+              echo "Deploying files in MC directory..."
+              
+              # Ensure we're in the right directory inside the GitHub workspace
+              cd $GITHUB_WORKSPACE/MC
+              echo "Current working directory (MC): $(pwd)"
+              ls -l  # List MC directory contents for debugging
+              
+              # Deploy all APK files in the MC folder
+              for file in *; do
+                if [[ -f "$file" ]]; then
+                  echo "Deploying $file to /server/path/MC/"
+                  scp "$file" ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
+                fi
+              done
             fi
 
-            # Check if the local SIL directory exists
-            if [ ! -d "$GITHUB_WORKSPACE/mobile/sil" ]; then
-              echo "Error: SIL directory does not exist in local workspace"
-              exit 1
+            # Check if there are changes in the SIL directory
+            if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
+              echo "Deploying files in SIL directory..."
+              
+              # Ensure we're in the right directory inside the GitHub workspace
+              cd $GITHUB_WORKSPACE/SIL
+              echo "Current working directory (SIL): $(pwd)"
+              ls -l  # List SIL directory contents for debugging
+              
+              # Deploy all APK files in the SIL folder
+              for file in *; do
+                if [[ -f "$file" ]]; then
+                  echo "Deploying $file to /server/path/SIL/"
+                  scp "$file" ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
+                fi
+              done
             fi
-
-            # Check and create MC directory on the remote server if it doesn't exist
-            ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "if [ ! -d /server/path/MC ]; then echo 'MC directory does not exist on server'; mkdir -p /server/path/MC; fi"
-
-            # Check and create SIL directory on the remote server if it doesn't exist
-            ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "if [ ! -d /server/path/SIL ]; then echo 'SIL directory does not exist on server'; mkdir -p /server/path/SIL; fi"
-
-            # Deploy MC files to the remote server
-            echo "Deploying files from MC directory..."
-            for file in $GITHUB_WORKSPACE/mobile/mobileMC/*; do
-              if [ -f "$file" ]; then
-                echo "Deploying $file to server..."
-                scp "$file" ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
-              fi
-            done
-
-            # Deploy SIL files to the remote server
-            echo "Deploying files from SIL directory..."
-            for file in $GITHUB_WORKSPACE/SIL/*; do
-              if [ -f "$file" ]; then
-                echo "Deploying $file to server..."
-                scp "$file" ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
-              fi
-            done
-
-            echo "Deployment completed successfully."
