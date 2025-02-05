@@ -21,6 +21,7 @@ jobs:
       - name: Identify changed files
         id: changed_files
         run: |
+          # Get the list of changed files
           CHANGED=$(git diff --name-only HEAD^ HEAD -- 'MC/**' 'SIL/**' || true)
           echo "Changed files: $CHANGED"
           # Ensure that CHANGED_FILES environment variable is set correctly
@@ -51,24 +52,24 @@ jobs:
           script: |
             echo "Changed files: ${{ env.CHANGED_FILES }}"
 
-            # Deploy MC APK if there are any changes in the MC folder
+            # Check if there are changes in the MC directory
             if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
-              echo "Deploying MC.apk..."
-              # Change to the correct directory inside the GitHub workspace
+              echo "Deploying files in MC directory..."
+              # Change to the MC directory inside the GitHub workspace
               cd $GITHUB_WORKSPACE/MC
               echo "Current working directory (MC): $(pwd)"
               ls -l  # List MC directory contents for debugging
-              # Deploy all APK files in the MC folder
+              # Deploy all changed files in the MC folder (any file, not just .apk)
               scp * ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
             fi
 
-            # Deploy SIL APK if there are any changes in the SIL folder
+            # Check if there are changes in the SIL directory
             if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
-              echo "Deploying SIL.apk..."
-              # Change to the SIL directory before listing and deploying files
+              echo "Deploying files in SIL directory..."
+              # Change to the SIL directory inside the GitHub workspace
               cd $GITHUB_WORKSPACE/SIL
               echo "Current working directory (SIL): $(pwd)"
               ls -l  # List SIL directory contents for debugging
-              # Deploy all files in the SIL folder
+              # Deploy all changed files in the SIL folder (any file, not just .apk)
               scp * ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
             fi
