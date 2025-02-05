@@ -30,7 +30,7 @@ jobs:
           echo "Before commit: ${{ github.event.before }}"
           echo "Current commit: ${{ github.sha }}"
 
-      - name: Debugging: List changed files
+      - name: Debugging List changed files
         run: |
           echo "Changed files between commits:"
           git diff --name-only ${{ github.event.before }} ${{ github.sha }}
