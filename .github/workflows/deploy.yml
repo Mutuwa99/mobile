@@ -55,6 +55,8 @@ jobs:
               echo "Deploying MC.apk..."
               # Change to the MC directory before listing and deploying files
               cd $GITHUB_WORKSPACE/MC
+
+              pwd $GITHUB_WORKSPACE
               ls -l  # List MC directory contents for debugging
               # Deploy all APK files in the MC folder
               scp *.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
