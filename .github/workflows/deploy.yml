@@ -1,107 +1,90 @@
-name: Deploy APKs
+name: Deploy to EC2
 
 on:
   push:
     branches:
-      - main
-    paths:
-      - 'MC/**'
-      - 'SIL/**'
+      - master
+      - production
 
 jobs:
-  deploy:
+  checkout_mycode:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Manual approval
+        id: approval
+        run: |
+          echo "Approve the deployment (Comment with 'approve' or 'reject')"
+          echo "::set-output name=approval_status::pending"
+
+  deploy_to_qa:
+    needs: checkout_mycode
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment: 
+      name: QA-mywebsite
+      url: http://noble-mutuwa.com/
 
     steps:
-      # Step 1: Checkout the repository
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.0
         with:
-          fetch-depth: 0  # Ensure all file history is available
+          ssh-private-key: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
 
-      # Step 2: Print directory structure at the root level
-      - name: Print root directory structure
+      - name: Check MC directory and deploy
         run: |
-          echo "Root directory structure of the GitHub workspace:"
-          tree /home/runner/work/mobile/mobile -L 2  # Adjust the depth level to show two levels
-
-      # Step 3: Print the first few files at the root of the repository
-      - name: Print first few files
-        run: |
-          echo "First few files in the repository (root level):"
-          ls -lh /home/runner/work/mobile/mobile | head -n 10  # List the first 10 files in the root directory
-
-      # Step 4: Identify changed files
-      - name: Identify changed files
-        id: changed_files
-        run: |
-          # Get the list of changed files from the previous commit to the current one
-          CHANGED=$(git diff --name-only HEAD^ HEAD -- 'MC/**' 'SIL/**' || true)
-          echo "Changed files: $CHANGED"
-          echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
-
-      # Step 5: Debugging: Print working directories and check existence
-      - name: Debugging Print working directories
-        run: |
-          echo "GitHub Workspace: /home/runner/work/mobile/mobile"
-          echo "MC directory: /home/runner/work/mobile/mobile/MC"
-          echo "SIL directory: /home/runner/work/mobile/mobile/SIL"
-
-          # Check if the MC directory exists
-          if [ -d "/home/runner/work/mobile/mobile/MC" ]; then
-            echo "MC directory exists."
+          if [ -d "$GITHUB_WORKSPACE/MC" ]; then
+            echo "Deploying MC directory..."
+            scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/MC"/* ec2-user@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PATH_MC }}
           else
-            echo "Error: MC directory does not exist."
-            exit 1
+            echo "MC directory not found, skipping deployment..."
           fi
 
-          # Check if the SIL directory exists
-          if [ -d "/home/runner/work/mobile/mobile/SIL" ]; then
-            echo "SIL directory exists."
+      - name: Check SIL directory and deploy
+        run: |
+          if [ -d "$GITHUB_WORKSPACE/SIL" ]; then
+            echo "Deploying SIL directory..."
+            scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/SIL"/* ec2-user@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PATH_SIL }}
           else
-            echo "Error: SIL directory does not exist."
-            exit 1
+            echo "SIL directory not found, skipping deployment..."
           fi
 
-      # Step 6: Deploy to Server using SSH
-      - name: Deploy to Server
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            echo "Changed files: ${{ env.CHANGED_FILES }}"
-            ls -R /home/runner/work/mobile/
+  qa_send_notification:
+    needs: deploy_to_qa
+    if: needs.deploy_to_qa.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send notification to repository owner
+        run: |
+          REPO_OWNER=$(jq --raw-output .repository.owner.login "${GITHUB_EVENT_PATH}")
+          NOTIFICATION="Deployment to QA completed."
+          API_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/notifications"
+          RESPONSE=$(curl -sSL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/json" -X POST -d "{\"subject\":\"$NOTIFICATION\",\"repository\":\"$REPO_OWNER/$GITHUB_REPOSITORY\"}" "$API_URL")
+          echo "Notification sent to repository owner: $REPO_OWNER"
 
-            # Deploy files from MC directory if there are changes
-            if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
-              echo "Deploying files in MC directory..."
-              cd /home/runner/work/mobile/mobile/MC
-              echo "Current working directory (MC): $(pwd)"
-              ls -l  # List MC directory contents for debugging
+  deploy_to_prod:
+    if: github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to production
+        run: |
+          echo "Production deployment started..."
+          # Add commands for production deployment if needed
 
-              # Deploy all changed files in the MC folder
-              for file in *; do
-                if [[ -f "$file" ]]; then
-                  echo "Deploying $file to /server/path/MC/"
-                  scp "$file" ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
-                fi
-              done
-            fi
-
-            # Deploy files from SIL directory if there are changes
-            if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
-              echo "Deploying files in SIL directory..."
-              cd /home/runner/work/mobile/mobile/SIL
-              echo "Current working directory (SIL): $(pwd)"
-              ls -l  # List SIL directory contents for debugging
-
-              # Deploy all changed files in the SIL folder
-              for file in *; do
-                if [[ -f "$file" ]]; then
-                  echo "Deploying $file to /server/path/SIL/"
-                  scp "$file" ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
-                fi
-              done
-            fi
+  production_send_notification:
+    needs: deploy_to_prod
+    if: needs.deploy_to_prod.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send production deployment notification
+        run: |
+          REPO_OWNER=$(jq --raw-output .repository.owner.login "${GITHUB_EVENT_PATH}")
+          NOTIFICATION="Deployment to production completed."
+          API_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/notifications"
+          RESPONSE=$(curl -sSL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/json" -X POST -d "{\"subject\":\"$NOTIFICATION\",\"repository\":\"$REPO_OWNER/$GITHUB_REPOSITORY\"}" "$API_URL")
+          echo "Notification sent to repository owner: $REPO_OWNER"
