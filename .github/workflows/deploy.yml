@@ -41,6 +41,11 @@ jobs:
       - name: Backup and deploy MC directory to EC2
         if: env.deploy_mc == 'true'
         run: |
+          echo "Cleaning up existing backups in the MC directory on EC2..."
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "
+            # Find and remove existing backup files before creating a new one
+            find /var/www/html/Mobile/MC/*.bak.* -type f -exec rm -f {} \;
+          "
           echo "Renaming existing files in the MC directory on EC2..."
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "
             for file in /var/www/html/Mobile/MC/*; do
@@ -66,6 +71,11 @@ jobs:
       - name: Backup and deploy SIL directory to EC2
         if: env.deploy_sil == 'true'
         run: |
+          echo "Cleaning up existing backups in the SIL directory on EC2..."
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "
+            # Find and remove existing backup files before creating a new one
+            find /var/www/html/Mobile/SIL/*.bak.* -type f -exec rm -f {} \;
+          "
           echo "Renaming existing files in the SIL directory on EC2..."
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "
             for file in /var/www/html/Mobile/SIL/*; do
