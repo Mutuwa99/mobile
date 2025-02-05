@@ -23,13 +23,13 @@ jobs:
       - name: Print root directory structure
         run: |
           echo "Root directory structure of the GitHub workspace:"
-          tree $GITHUB_WORKSPACE -L 2  # Adjust the depth level to show two levels
+          tree /home/runner/work/mobile/mobile -L 2  # Adjust the depth level to show two levels
 
       # Step 3: Print the first few files at the root of the repository
       - name: Print first few files
         run: |
           echo "First few files in the repository (root level):"
-          ls -lh $GITHUB_WORKSPACE | head -n 10  # List the first 10 files in the root directory
+          ls -lh /home/runner/work/mobile/mobile | head -n 10  # List the first 10 files in the root directory
 
       # Step 4: Identify changed files
       - name: Identify changed files
@@ -41,14 +41,14 @@ jobs:
           echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
 
       # Step 5: Debugging: Print working directories and check existence
-      - name: Debugging Print working directories
+      - name: Debugging: Print working directories
         run: |
-          echo "GitHub Workspace: $GITHUB_WORKSPACE"
-          echo "MC directory: $GITHUB_WORKSPACE/MC"
-          echo "SIL directory: $GITHUB_WORKSPACE/SIL"
+          echo "GitHub Workspace: /home/runner/work/mobile/mobile"
+          echo "MC directory: /home/runner/work/mobile/mobile/MC"
+          echo "SIL directory: /home/runner/work/mobile/mobile/SIL"
 
           # Check if the MC directory exists
-          if [ -d "$GITHUB_WORKSPACE/MC" ]; then
+          if [ -d "/home/runner/work/mobile/mobile/MC" ]; then
             echo "MC directory exists."
           else
             echo "Error: MC directory does not exist."
@@ -56,7 +56,7 @@ jobs:
           fi
 
           # Check if the SIL directory exists
-          if [ -d "$GITHUB_WORKSPACE/SIL" ]; then
+          if [ -d "/home/runner/work/mobile/mobile/SIL" ]; then
             echo "SIL directory exists."
           else
             echo "Error: SIL directory does not exist."
@@ -76,7 +76,7 @@ jobs:
             # Deploy files from MC directory if there are changes
             if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
               echo "Deploying files in MC directory..."
-              cd $GITHUB_WORKSPACE/MC
+              cd /home/runner/work/mobile/mobile/MC
               echo "Current working directory (MC): $(pwd)"
               ls -l  # List MC directory contents for debugging
 
@@ -92,5 +92,15 @@ jobs:
             # Deploy files from SIL directory if there are changes
             if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
               echo "Deploying files in SIL directory..."
-              cd $GITHUB_WORKSPACE/SIL
-     
+              cd /home/runner/work/mobile/mobile/SIL
+              echo "Current working directory (SIL): $(pwd)"
+              ls -l  # List SIL directory contents for debugging
+
+              # Deploy all changed files in the SIL folder
+              for file in *; do
+                if [[ -f "$file" ]]; then
+                  echo "Deploying $file to /server/path/SIL/"
+                  scp "$file" ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
+                fi
+              done
+            fi
