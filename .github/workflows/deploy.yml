@@ -1,0 +1,40 @@
+name: Deploy Client APKs
+
+on:
+  push:
+    branches:
+      - main  # Run when changes are pushed to main
+    paths:
+      - 'MC/*.apk'
+      - 'SIL/*.apk'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Identify changed APKs
+        id: changed_files
+        run: |
+          CHANGED=$(git diff --name-only HEAD^ HEAD | grep '.apk' || true)
+          echo "Changed files: $CHANGED"
+          echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
+
+      - name: Deploy MC APK if changed
+        if: contains(env.CHANGED_FILES, 'MC/')
+        run: |
+          echo "Deploying MC APK..."
+          scp -i ${{ secrets.SSH_KEY }} MC/*.apk user@your-server:/server/path/MC/
+
+      - name: Deploy SIL APK if changed
+        if: contains(env.CHANGED_FILES, 'SIL/')
+        run: |
+          echo "Deploying SIL APK..."
+          scp -i ${{ secrets.SSH_KEY }} SIL/*.apk user@your-server:/server/path/SIL/
+
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
