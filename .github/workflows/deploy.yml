@@ -1,12 +1,12 @@
-name: Deploy APKs
+name: Deploy Files
 
 on:
   push:
     branches:
       - main  # Run only when pushing to the main branch
     paths:
-      - 'MC/*.apk'
-      - 'SIL/*.apk'
+      - 'MC/**'   # Watch for any file changes in the MC folder
+      - 'SIL/**'  # Watch for any file changes in the SIL folder
 
 jobs:
   deploy:
@@ -18,10 +18,10 @@ jobs:
         with:
           fetch-depth: 0  # Fetch the entire history to ensure all files are checked out
 
-      - name: Identify changed APKs
+      - name: Identify changed files
         id: changed_files
         run: |
-          CHANGED=$(git diff --name-only HEAD^ HEAD -- 'MC/*.apk' 'SIL/*.apk' || true)
+          CHANGED=$(git diff --name-only HEAD^ HEAD -- 'MC/**' 'SIL/**' || true)
           echo "Changed files: $CHANGED"
           echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
 
@@ -50,26 +50,24 @@ jobs:
           script: |
             echo "Changed files: ${{ env.CHANGED_FILES }}"
 
-            # Deploy MC APK if there are any changes in the MC folder
+            # Deploy MC files if there are any changes in the MC folder
             if [[ "${{ env.CHANGED_FILES }}" == *"MC/"* ]]; then
-              echo "Deploying MC.apk..."
-              # Change to the correct directory inside the GitHub workspace
+              echo "Deploying files from MC folder..."
+              # Change to the MC directory before listing and deploying files
               cd $GITHUB_WORKSPACE/MC
               echo "Current working directory (MC): $(pwd)"
               ls -l  # List MC directory contents for debugging
-              # Deploy all APK files in the MC folder
-              scp *.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
+              # Deploy all changed files in the MC folder
+              scp * ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/MC/
             fi
 
-            # Deploy SIL APK if there are any changes in the SIL folder
-            # Deploy SIL APK if there are any changes in the SIL folder
+            # Deploy SIL files if there are any changes in the SIL folder
             if [[ "${{ env.CHANGED_FILES }}" == *"SIL/"* ]]; then
-              echo "Deploying SIL.apk..."
+              echo "Deploying files from SIL folder..."
               # Change to the SIL directory before listing and deploying files
               cd $GITHUB_WORKSPACE/SIL
               echo "Current working directory (SIL): $(pwd)"
               ls -l  # List SIL directory contents for debugging
-              # Deploy all APK files in the SIL folder
-              scp *.apk ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
+              # Deploy all changed files in the SIL folder
+              scp * ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/server/path/SIL/
             fi
-
