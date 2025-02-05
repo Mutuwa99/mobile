@@ -29,11 +29,11 @@ jobs:
         if: ${{ github.event.head_commit.modified == 'MC' }}
         run: |
           echo "Copying MC files to the server..."
-          rsync -avz --exclude '.git' ./MC/ user@your-server:/path/to/your/app/MC/
+          rsync -avz --exclude '.git' ./MC/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/path/to/your/app/MC/
 
       # Step 5: Check for changes in SIL and copy files over
       - name: Copy SIL files
         if: ${{ github.event.head_commit.modified == 'SIL' }}
         run: |
           echo "Copying SIL files to the server..."
-          rsync -avz --exclude '.git' ./SIL/ user@your-server:/path/to/your/app/SIL/
+          rsync -avz --exclude '.git' ./SIL/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/path/to/your/app/SIL/
