@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@v2
 
   deploy_to_qa:
-    depends-on: checkout_mycode
+    # depends-on: checkout_mycode
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
