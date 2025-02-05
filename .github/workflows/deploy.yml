@@ -5,7 +5,6 @@ on:
     branches:
       - master
       - production
-      - main
 
 jobs:
   checkout_mycode:
@@ -14,19 +13,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Manual approval
-        id: approval
-        run: |
-          echo "Approve the deployment (Comment with 'approve' or 'reject')"
-          echo "::set-output name=approval_status::pending"
-
   deploy_to_qa:
-    needs: checkout_mycode
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    environment: 
-      name: QA-mywebsite
-      url: http://noble-mutuwa.com/
+    # needs: checkout_mycode
+    # if: github.ref == 'refs/heads/master'
+    # runs-on: ubuntu-latest
+    # environment: 
+    #   name: QA-mywebsite
+    #   url: http://noble-mutuwa.com/
 
     steps:
       - name: Checkout code
