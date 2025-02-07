@@ -1,0 +1,50 @@
+name: APK Security Scan
+
+on:
+  push:
+    branches:
+      - main
+      - production
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  scan_apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Find and Scan APKs using MobSF
+        run: |
+          MC_APK=$(find $GITHUB_WORKSPACE/MC -name "*.apk" | head -n 1)
+          SIL_APK=$(find $GITHUB_WORKSPACE/SIL -name "*.apk" | head -n 1)
+
+          SCAN_FAILED=false
+
+          if [[ -n "$MC_APK" ]]; then
+            echo "Scanning MC APK: $MC_APK"
+            docker run --rm -v $GITHUB_WORKSPACE:/app opensecurity/mobile-security-framework-mobsf analyze "$MC_APK" || SCAN_FAILED=true
+          else
+            echo "No APK found in MC directory."
+          fi
+
+          if [[ -n "$SIL_APK" ]]; then
+            echo "Scanning SIL APK: $SIL_APK"
+            docker run --rm -v $GITHUB_WORKSPACE:/app opensecurity/mobile-security-framework-mobsf analyze "$SIL_APK" || SCAN_FAILED=true
+          else
+            echo "No APK found in SIL directory."
+          fi
+
+          if [ "$SCAN_FAILED" = true ]; then
+            echo "Security scan failed. Exiting..."
+            exit 1
+          fi
+
+      - name: Upload Scan Reports (Optional)
+        uses: actions/upload-artifact@v3
+        with:
+          name: APK-Security-Reports
+          path: $GITHUB_WORKSPACE/mobsf_reports/
+
