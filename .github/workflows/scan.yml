@@ -43,8 +43,7 @@ jobs:
           fi
 
       - name: Upload Scan Reports (Optional)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: APK-Security-Reports
           path: $GITHUB_WORKSPACE/mobsf_reports/
-
