@@ -41,13 +41,11 @@ jobs:
       - name: Backup and deploy MC directory to EC2
         if: env.deploy_mc == 'true'
         run: |
-          echo "Checking if MC directory on the server is empty..."
+          echo "Checking if there are files to back up in MC directory on EC2..."
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "
-            if [ -z \"\$(ls -A /var/www/html/Mobile/MC 2>/dev/null)\" ]; then
-              echo 'MC directory is empty. Deploying files...'
-            else
-              echo 'MC directory has files. Proceeding with backup...'
-              
+            if ls /var/www/html/Mobile/MC/* 1> /dev/null 2>&1; then
+              echo 'Files found, proceeding with backup...'
+
               # Delete old backups if they exist
               find /var/www/html/Mobile/MC/*.bak.* -type f -exec rm -f {} \;
 
@@ -57,6 +55,8 @@ jobs:
                   mv \$file \${file}.4-sure.bak.\$(date +'%Y%m%d%H%M%S')
                 fi
               done
+            else
+              echo 'No existing files found in MC directory. Skipping backup.'
             fi
           "
 
@@ -77,12 +77,10 @@ jobs:
       - name: Backup and deploy SIL directory to EC2
         if: env.deploy_sil == 'true'
         run: |
-          echo "Checking if SIL directory on the server is empty..."
+          echo "Checking if there are files to back up in SIL directory on EC2..."
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "
-            if [ -z \"\$(ls -A /var/www/html/Mobile/SIL 2>/dev/null)\" ]; then
-              echo 'SIL directory is empty. Deploying files...'
-            else
-              echo 'SIL directory has files. Proceeding with backup...'
+            if ls /var/www/html/Mobile/SIL/* 1> /dev/null 2>&1; then
+              echo 'Files found, proceeding with backup...'
 
               # Delete old backups if they exist
               find /var/www/html/Mobile/SIL/*.bak.* -type f -exec rm -f {} \;
@@ -93,6 +91,8 @@ jobs:
                   mv \$file \${file}.4-sure.bak.\$(date +'%Y%m%d%H%M%S')
                 fi
               done
+            else
+              echo 'No existing files found in SIL directory. Skipping backup.'
             fi
           "
 
