@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - production
-  workflow_dispatch:  # Allows manual triggering
+  workflow_dispatch:
 
 jobs:
   scan_apk:
@@ -16,33 +16,52 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Find and Scan APKs using MobSF
+      - name: Start MobSF Container
         run: |
+          docker run -d --name mobsf -p 8000:8000 opensecurity/mobile-security-framework-mobsf
+          sleep 30  # Wait for MobSF to fully start
+
+      - name: Find APKs and Scan
+        run: |
+          MOBSF_API="http://localhost:8000/api/v1"
+          API_KEY=$(curl -s $MOBSF_API/api_docs | grep -o '"API_KEY": "[^"]*' | awk -F'"' '{print $4}')
+
           MC_APK=$(find $GITHUB_WORKSPACE/MC -name "*.apk" | head -n 1)
           SIL_APK=$(find $GITHUB_WORKSPACE/SIL -name "*.apk" | head -n 1)
 
           SCAN_FAILED=false
 
-          if [[ -n "$MC_APK" ]]; then
-            echo "Scanning MC APK: $MC_APK"
-            docker run --rm -v $GITHUB_WORKSPACE:/app opensecurity/mobile-security-framework-mobsf analyze "$MC_APK" || SCAN_FAILED=true
-          else
-            echo "No APK found in MC directory."
-          fi
+          function scan_apk() {
+            APK_PATH=$1
+            APK_NAME=$(basename $APK_PATH)
 
-          if [[ -n "$SIL_APK" ]]; then
-            echo "Scanning SIL APK: $SIL_APK"
-            docker run --rm -v $GITHUB_WORKSPACE:/app opensecurity/mobile-security-framework-mobsf analyze "$SIL_APK" || SCAN_FAILED=true
-          else
-            echo "No APK found in SIL directory."
-          fi
+            echo "Uploading $APK_NAME..."
+            RESPONSE=$(curl -X POST "$MOBSF_API/upload" -F "file=@$APK_PATH")
+            HASH=$(echo $RESPONSE | jq -r '.hash')
+
+            echo "Analyzing $APK_NAME..."
+            ANALYZE_RESPONSE=$(curl -X POST "$MOBSF_API/scan" -d "hash=$HASH" -H "Authorization: $API_KEY")
+
+            if [[ $ANALYZE_RESPONSE == *"error"* ]]; then
+              echo "Security scan failed for $APK_NAME."
+              SCAN_FAILED=true
+            else
+              echo "Scan completed for $APK_NAME."
+            fi
+          }
+
+          if [[ -n "$MC_APK" ]]; then scan_apk "$MC_APK"; fi
+          if [[ -n "$SIL_APK" ]]; then scan_apk "$SIL_APK"; fi
 
           if [ "$SCAN_FAILED" = true ]; then
-            echo "Security scan failed. Exiting..."
+            echo "One or more scans failed. Exiting..."
             exit 1
           fi
 
-      - name: Upload Scan Reports (Optional)
+      - name: Stop MobSF Container
+        run: docker stop mobsf && docker rm mobsf
+
+      - name: Upload Scan Reports
         uses: actions/upload-artifact@v4
         with:
           name: APK-Security-Reports
