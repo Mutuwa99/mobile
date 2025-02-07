@@ -41,19 +41,19 @@ jobs:
       - name: Backup and deploy MC directory to EC2
         if: env.deploy_mc == 'true'
         run: |
-          echo "Cleaning up existing backups in the MC directory on EC2..."
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "
-            # Find and remove existing backup files before creating a new one
-            find /var/www/html/Mobile/MC/*.bak.* -type f -exec rm -f {} \;
-          "
-          echo "Renaming existing files in the MC directory on EC2..."
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "
-            for file in /var/www/html/Mobile/MC/*; do
-              if [[ -f \$file ]]; then
-                mv \$file \${file}.4-sure.bak.\$(date +'%Y%m%d%H%M%S')
-              fi
-            done
-          "
+          # echo "Cleaning up existing backups in the MC directory on EC2..."
+          # ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "
+          #   # Find and remove existing backup files before creating a new one
+          #   find /var/www/html/Mobile/MC/*.bak.* -type f -exec rm -f {} \;
+          # "
+          # echo "Renaming existing files in the MC directory on EC2..."
+          # ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null mutuwa@${{ secrets.SERVER_HOST }} "
+          #   for file in /var/www/html/Mobile/MC/*; do
+          #     if [[ -f \$file ]]; then
+          #       mv \$file \${file}.4-sure.bak.\$(date +'%Y%m%d%H%M%S')
+          #     fi
+          #   done
+          # "
           echo "Deploying new MC APK to the server..."
           scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$GITHUB_WORKSPACE/MC"/* mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/MC/
 
