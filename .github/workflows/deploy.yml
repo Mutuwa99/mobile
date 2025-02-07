@@ -58,7 +58,7 @@ jobs:
             fi
           "
           echo "Deploying new file to the MC directory on EC2..."
-          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null path/to/new_file mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/MC/
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null  mutuwa@${{ secrets.SERVER_HOST }}:/var/www/html/Mobile/MC/
 
 
       - name: Check and deploy SIL directory if changed
